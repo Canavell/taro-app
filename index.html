@@ -721,9 +721,72 @@
     { name:"Суд",             emoji:"📯" },
     { name:"Мир",             emoji:"🌍" },
   ];
-  const RANKS = ["Туз","Двойка","Тройка","Четвёрка","Пятёрка","Шестёрка",
-                 "Семёрка","Восьмёрка","Девятка","Десятка","Паж","Рыцарь","Королева","Король"];
-  const SUITS = { "Жезлы": RANKS, "Кубки": RANKS, "Мечи": RANKS, "Пентакли": RANKS };
+  const SUITS = {
+    "Жезлы": [
+      { rank:"Туз",       emoji:"🔥" },
+      { rank:"Двойка",    emoji:"🗺️" },
+      { rank:"Тройка",    emoji:"⛵" },
+      { rank:"Четвёрка",  emoji:"🎪" },
+      { rank:"Пятёрка",   emoji:"🥊" },
+      { rank:"Шестёрка",  emoji:"🏆" },
+      { rank:"Семёрка",   emoji:"🛡️" },
+      { rank:"Восьмёрка", emoji:"💨" },
+      { rank:"Девятка",   emoji:"🏹" },
+      { rank:"Десятка",   emoji:"😤" },
+      { rank:"Паж",       emoji:"🦊" },
+      { rank:"Рыцарь",    emoji:"🐎" },
+      { rank:"Королева",  emoji:"🌻" },
+      { rank:"Король",    emoji:"🦁" },
+    ],
+    "Кубки": [
+      { rank:"Туз",       emoji:"💖" },
+      { rank:"Двойка",    emoji:"🫶" },
+      { rank:"Тройка",    emoji:"🥂" },
+      { rank:"Четвёрка",  emoji:"😔" },
+      { rank:"Пятёрка",   emoji:"😢" },
+      { rank:"Шестёрка",  emoji:"🌸" },
+      { rank:"Семёрка",   emoji:"🌈" },
+      { rank:"Восьмёрка", emoji:"🚶" },
+      { rank:"Девятка",   emoji:"🍀" },
+      { rank:"Десятка",   emoji:"🏡" },
+      { rank:"Паж",       emoji:"🐟" },
+      { rank:"Рыцарь",    emoji:"🎠" },
+      { rank:"Королева",  emoji:"🦢" },
+      { rank:"Король",    emoji:"🐋" },
+    ],
+    "Мечи": [
+      { rank:"Туз",       emoji:"⚡" },
+      { rank:"Двойка",    emoji:"🙈" },
+      { rank:"Тройка",    emoji:"💔" },
+      { rank:"Четвёрка",  emoji:"😴" },
+      { rank:"Пятёрка",   emoji:"😞" },
+      { rank:"Шестёрка",  emoji:"🛶" },
+      { rank:"Семёрка",   emoji:"🦊" },
+      { rank:"Восьмёрка", emoji:"🔒" },
+      { rank:"Девятка",   emoji:"😱" },
+      { rank:"Десятка",   emoji:"💥" },
+      { rank:"Паж",       emoji:"🦅" },
+      { rank:"Рыцарь",    emoji:"🌪️" },
+      { rank:"Королева",  emoji:"🦋" },
+      { rank:"Король",    emoji:"🗡️" },
+    ],
+    "Пентакли": [
+      { rank:"Туз",       emoji:"💰" },
+      { rank:"Двойка",    emoji:"🤹" },
+      { rank:"Тройка",    emoji:"🏗️" },
+      { rank:"Четвёрка",  emoji:"🤑" },
+      { rank:"Пятёрка",   emoji:"❄️" },
+      { rank:"Шестёрка",  emoji:"🤲" },
+      { rank:"Семёрка",   emoji:"🌱" },
+      { rank:"Восьмёрка", emoji:"🔨" },
+      { rank:"Девятка",   emoji:"🍇" },
+      { rank:"Десятка",   emoji:"🏰" },
+      { rank:"Паж",       emoji:"📚" },
+      { rank:"Рыцарь",    emoji:"🐂" },
+      { rank:"Королева",  emoji:"🌿" },
+      { rank:"Король",    emoji:"💎" },
+    ],
+  };
   const SUIT_ICONS = { "Жезлы":"🔥","Кубки":"💧","Мечи":"⚔️","Пентакли":"🌿" };
   // DB name format: "Туз Жезлов (Жезлы)" — suit word in genitive
   const SUIT_GENITIVE = { "Жезлы":"Жезлов","Кубки":"Кубков","Мечи":"Мечей","Пентакли":"Пентаклей" };
@@ -798,11 +861,10 @@
     const grid = document.createElement('div');
     grid.className = 'card-grid';
 
-    const icon = isMajor ? '✨' : SUIT_ICONS[groupKey];
     const cards = isMajor
       ? MAJOR.map(({ name, emoji }) => ({ emoji, label: name, dbName: name }))
-      : SUITS[groupKey].map(rank => ({
-          emoji: icon,
+      : SUITS[groupKey].map(({ rank, emoji }) => ({
+          emoji,
           label: `${rank} ${SUIT_GENITIVE[groupKey]}`,
           dbName: `${rank} ${SUIT_GENITIVE[groupKey]} (${groupKey})`,
         }));
