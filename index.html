@@ -698,22 +698,32 @@
 
   // ── Card Picker ──────────────────────────────────────────────
   const MAJOR = [
-    "Шут","Маг","Верховная Жрица","Императрица","Император",
-    "Иерофант","Влюблённые","Колесница","Сила","Отшельник",
-    "Колесо Фортуны","Справедливость","Повешенный","Смерть",
-    "Умеренность","Дьявол","Башня","Звезда","Луна","Солнце",
-    "Суд","Мир",
+    { name:"Шут",       emoji:"🃏" },
+    { name:"Маг",       emoji:"🪄" },
+    { name:"Верховная Жрица", emoji:"🌙" },
+    { name:"Императрица",     emoji:"👑" },
+    { name:"Император",       emoji:"⚜️" },
+    { name:"Иерофант",        emoji:"🏛️" },
+    { name:"Влюблённые",      emoji:"❤️" },
+    { name:"Колесница",       emoji:"🏇" },
+    { name:"Сила",            emoji:"🦁" },
+    { name:"Отшельник",       emoji:"🕯️" },
+    { name:"Колесо Фортуны",  emoji:"🎡" },
+    { name:"Справедливость",  emoji:"⚖️" },
+    { name:"Повешенный",      emoji:"🙃" },
+    { name:"Смерть",          emoji:"💀" },
+    { name:"Умеренность",     emoji:"⚗️" },
+    { name:"Дьявол",          emoji:"😈" },
+    { name:"Башня",           emoji:"🗼" },
+    { name:"Звезда",          emoji:"⭐" },
+    { name:"Луна",            emoji:"🌕" },
+    { name:"Солнце",          emoji:"☀️" },
+    { name:"Суд",             emoji:"📯" },
+    { name:"Мир",             emoji:"🌍" },
   ];
-  const SUITS = {
-    "Жезлы": ["Туз","Двойка","Тройка","Четвёрка","Пятёрка","Шестёрка",
-               "Семёрка","Восьмёрка","Девятка","Десятка","Паж","Рыцарь","Королева","Король"],
-    "Кубки": ["Туз","Двойка","Тройка","Четвёрка","Пятёрка","Шестёрка",
-               "Семёрка","Восьмёрка","Девятка","Десятка","Паж","Рыцарь","Королева","Король"],
-    "Мечи": ["Туз","Двойка","Тройка","Четвёрка","Пятёрка","Шестёрка",
-               "Семёрка","Восьмёрка","Девятка","Десятка","Паж","Рыцарь","Королева","Король"],
-    "Пентакли": ["Туз","Двойка","Тройка","Четвёрка","Пятёрка","Шестёрка",
-               "Семёрка","Восьмёрка","Девятка","Десятка","Паж","Рыцарь","Королева","Король"],
-  };
+  const RANKS = ["Туз","Двойка","Тройка","Четвёрка","Пятёрка","Шестёрка",
+                 "Семёрка","Восьмёрка","Девятка","Десятка","Паж","Рыцарь","Королева","Король"];
+  const SUITS = { "Жезлы": RANKS, "Кубки": RANKS, "Мечи": RANKS, "Пентакли": RANKS };
   const SUIT_ICONS = { "Жезлы":"🔥","Кубки":"💧","Мечи":"⚔️","Пентакли":"🌿" };
   // DB name format: "Туз Жезлов (Жезлы)" — suit word in genitive
   const SUIT_GENITIVE = { "Жезлы":"Жезлов","Кубки":"Кубков","Мечи":"Мечей","Пентакли":"Пентаклей" };
@@ -788,17 +798,19 @@
     const grid = document.createElement('div');
     grid.className = 'card-grid';
 
+    const icon = isMajor ? '✨' : SUIT_ICONS[groupKey];
     const cards = isMajor
-      ? MAJOR.map(n => ({ label: n, dbName: n }))
+      ? MAJOR.map(({ name, emoji }) => ({ emoji, label: name, dbName: name }))
       : SUITS[groupKey].map(rank => ({
+          emoji: icon,
           label: `${rank} ${SUIT_GENITIVE[groupKey]}`,
           dbName: `${rank} ${SUIT_GENITIVE[groupKey]} (${groupKey})`,
         }));
 
-    cards.forEach(({ label, dbName }) => {
+    cards.forEach(({ emoji, label, dbName }) => {
       const item = document.createElement('button');
       item.className = 'card-item';
-      item.textContent = label;
+      item.innerHTML = `<div style="font-size:20px;margin-bottom:4px">${emoji}</div>${label}`;
       item.onclick = () => pickCard(dbName);
       grid.appendChild(item);
     });
