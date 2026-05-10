@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Таро</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #08051a;
+      --surface: #100c28;
+      --surface2: #16103a;
+      --border: #2e1f60;
+      --border-glow: #6c3fd4;
+      --accent: #a374ff;
+      --accent2: #d4a843;
+      --text: #e8dff5;
+      --text-muted: #7b68a8;
+      --text-dim: #3d3060;
+    }
+
+    body {
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Nebula background */
+    .nebula {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .nebula::before {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px;
+      top: -100px; left: -100px;
+      background: radial-gradient(circle, #4a1a8a18 0%, transparent 65%);
+      animation: nebulaFloat 12s ease-in-out infinite;
+    }
+    .nebula::after {
+      content: '';
+      position: absolute;
+      width: 400px; height: 400px;
+      bottom: -50px; right: -80px;
+      background: radial-gradient(circle, #1a4a8a14 0%, transparent 65%);
+      animation: nebulaFloat 16s ease-in-out infinite reverse;
+    }
+    @keyframes nebulaFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50%       { transform: translate(30px, 20px) scale(1.1); }
+    }
+
+    /* Stars */
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: #fff;
+      animation: twinkle var(--d) infinite ease-in-out;
+      opacity: 0;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; }
+      50%       { opacity: var(--op); }
+    }
+
+    /* Screen */
+    .screen {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      padding: 20px 16px 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    /* Header */
+    .header {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .greeting {
+      font-size: 13px;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+    .greeting span { color: var(--accent); font-weight: 500; }
+    .title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      background: linear-gradient(135deg, #d4b8ff, #a374ff, #d4a843);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* Deck */
+    .deck-scene {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 200px;
+      height: 220px;
+    }
+    .orb {
+      position: absolute;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #6c2bd930 0%, transparent 70%);
+      animation: orbPulse 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes orbPulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50%       { transform: scale(1.2); opacity: 1; }
+    }
+    .deck-wrap {
+      position: relative;
+      width: 120px;
+      height: 200px;
+      cursor: pointer;
+    }
+    .deck-card {
+      position: absolute;
+      width: 120px;
+      height: 200px;
+      border-radius: 12px;
+      box-shadow: 0 12px 40px #00000088;
+      transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
+      overflow: hidden;
+    }
+    .deck-card:nth-child(1) { transform: translate(8px, 8px) rotate(3deg); }
+    .deck-card:nth-child(2) { transform: translate(4px, 4px) rotate(1.5deg); }
+    .deck-card:nth-child(3) { transform: translate(0, 0) rotate(0deg); }
+
+    .deck-wrap:active .deck-card:nth-child(3) { transform: translateY(-10px) rotate(0deg); }
+
+    /* Card SVG face */
+    .card-svg { width: 100%; height: 100%; display: block; }
+
+    /* Shuffle animation */
+    .shuffling .deck-card { transition: none; }
+    .shuffling .deck-card:nth-child(1) { animation: shuffle1 1.2s ease-in-out; }
+    .shuffling .deck-card:nth-child(2) { animation: shuffle2 1.2s ease-in-out; }
+    .shuffling .deck-card:nth-child(3) { animation: shuffle3 1.2s ease-in-out; }
+
+    @keyframes shuffle1 {
+      0%       { transform: translate(8px, 8px) rotate(3deg); }
+      35%, 65% { transform: translate(-56px, 24px) rotate(-26deg); }
+      100%     { transform: translate(8px, 8px) rotate(3deg); }
+    }
+    @keyframes shuffle2 {
+      0%       { transform: translate(4px, 4px) rotate(1.5deg); }
+      35%, 65% { transform: translate(4px, -14px) rotate(0deg); }
+      100%     { transform: translate(4px, 4px) rotate(1.5deg); }
+    }
+    @keyframes shuffle3 {
+      0%       { transform: translate(0, 0) rotate(0deg); }
+      35%, 65% { transform: translate(56px, 24px) rotate(26deg); }
+      100%     { transform: translate(0, 0) rotate(0deg); }
+    }
+
+    .deck-hint {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      margin-top: -8px;
+    }
+
+    /* Sections */
+    .section { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding-left: 4px;
+    }
+    .section-label span { margin-right: 6px; }
+
+    /* Buttons */
+    .spread-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .spread-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #a374ff08, #d4a84308);
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .spread-btn:active { transform: scale(0.98); }
+    .spread-btn:active::before { opacity: 1; }
+
+    .spread-btn.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px #a374ff44, 0 4px 24px #6c2bd933;
+    }
+    .spread-btn.selected::before { opacity: 1; }
+    .spread-btn.selected .spread-name { color: #d4b8ff; }
+
+    .spread-icon {
+      font-size: 26px;
+      flex-shrink: 0;
+      width: 36px;
+      text-align: center;
+      filter: drop-shadow(0 0 8px #a374ff55);
+    }
+    .spread-info { flex: 1; min-width: 0; }
+    .spread-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.2; }
+    .spread-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .spread-arrow {
+      font-size: 14px;
+      color: var(--text-dim);
+      flex-shrink: 0;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .spread-btn.selected .spread-arrow {
+      color: var(--accent);
+      transform: translateX(2px);
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="nebula"></div>
+<div class="stars" id="stars"></div>
+
+<div class="screen">
+
+  <div class="header">
+    <p class="greeting" id="greeting"></p>
+    <h1 class="title">✦ Таро ✦</h1>
+    <p class="subtitle">Выберите расклад</p>
+  </div>
+
+  <div class="deck-scene">
+    <div class="orb"></div>
+    <div class="deck-wrap" id="deck" onclick="shuffleDeck()">
+
+      <!-- Card 1 (back) -->
+      <div class="deck-card">
+        <svg class="card-svg" viewBox="0 0 120 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e0f48"/>
+              <stop offset="100%" stop-color="#0a0620"/>
+            </linearGradient>
+          </defs>
+          <rect width="120" height="200" rx="10" fill="url(#bg1)"/>
+          <rect x="5" y="5" width="110" height="190" rx="8" fill="none" stroke="#d4a84330" stroke-width="1"/>
+          <rect x="10" y="10" width="100" height="180" rx="6" fill="none" stroke="#d4a84318" stroke-width="0.5"/>
+          <text x="60" y="88" text-anchor="middle" font-size="36" fill="#d4a84350">☽</text>
+          <text x="22" y="38" font-size="8" fill="#d4a84335">✦</text>
+          <text x="95" y="38" font-size="7" fill="#d4a84328">✦</text>
+          <text x="20" y="170" font-size="7" fill="#d4a84328">✦</text>
+          <text x="96" y="168" font-size="8" fill="#d4a84335">✦</text>
+          <text x="60" y="170" text-anchor="middle" font-size="6" fill="#d4a84325" letter-spacing="3" font-family="serif">TAROT</text>
+        </svg>
+      </div>
+
+      <!-- Card 2 (middle) -->
+      <div class="deck-card">
+        <svg class="card-svg" viewBox="0 0 120 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#240f50"/>
+              <stop offset="100%" stop-color="#0c0722"/>
+            </linearGradient>
+          </defs>
+          <rect width="120" height="200" rx="10" fill="url(#bg2)"/>
+          <rect x="5" y="5" width="110" height="190" rx="8" fill="none" stroke="#d4a84338" stroke-width="1"/>
+          <text x="60" y="88" text-anchor="middle" font-size="36" fill="#d4a84358">☽</text>
+          <text x="22" y="38" font-size="8" fill="#d4a84340">✦</text>
+          <text x="95" y="38" font-size="7" fill="#d4a84330">✦</text>
+          <text x="20" y="170" font-size="7" fill="#d4a84330">✦</text>
+          <text x="96" y="168" font-size="8" fill="#d4a84340">✦</text>
+          <text x="60" y="170" text-anchor="middle" font-size="6" fill="#d4a84330" letter-spacing="3" font-family="serif">TAROT</text>
+        </svg>
+      </div>
+
+      <!-- Card 3 (top / tap) -->
+      <div class="deck-card">
+        <svg class="card-svg" viewBox="0 0 120 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2a1258"/>
+              <stop offset="100%" stop-color="#0e0824"/>
+            </linearGradient>
+            <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#d4a843"/>
+              <stop offset="50%" stop-color="#f0c860"/>
+              <stop offset="100%" stop-color="#a07830"/>
+            </linearGradient>
+          </defs>
+          <rect width="120" height="200" rx="10" fill="url(#bg3)"/>
+          <rect x="4" y="4" width="112" height="192" rx="8" fill="none" stroke="url(#gold)" stroke-width="1.2"/>
+          <rect x="9" y="9" width="102" height="182" rx="6" fill="none" stroke="#d4a84328" stroke-width="0.6"/>
+
+          <!-- Ornate corners -->
+          <text x="13" y="26" font-size="10" fill="#d4a84366">✦</text>
+          <text x="96" y="26" font-size="10" fill="#d4a84366">✦</text>
+          <text x="13" y="186" font-size="10" fill="#d4a84366">✦</text>
+          <text x="96" y="186" font-size="10" fill="#d4a84366">✦</text>
+
+          <!-- Central eye / moon symbol -->
+          <text x="60" y="95" text-anchor="middle" font-size="42" fill="#d4a843bb">☽</text>
+          <circle cx="60" cy="76" r="3" fill="#d4a84390"/>
+
+          <!-- Stars scatter -->
+          <text x="30" y="55" font-size="7" fill="#d4a84355">✦</text>
+          <text x="86" y="52" font-size="6" fill="#d4a84545">✦</text>
+          <text x="28" y="148" font-size="6" fill="#d4a84545">✦</text>
+          <text x="88" y="150" font-size="7" fill="#d4a84555">✦</text>
+          <text x="58" y="42" font-size="5" fill="#d4a84540">✦</text>
+          <text x="60" y="165" text-anchor="middle" font-size="7" fill="#d4a84360" letter-spacing="4" font-family="serif">TAROT</text>
+        </svg>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="deck-hint">Нажмите на колоду, чтобы перемешать</p>
+
+  <!-- Tarot -->
+  <div class="section">
+    <p class="section-label"><span>🃏</span>Таро</p>
+
+    <button class="spread-btn" onclick="selectSpread('daily_card', this)">
+      <span class="spread-icon">🃏</span>
+      <div class="spread-info">
+        <div class="spread-name">Карта дня</div>
+        <div class="spread-desc">Послание на сегодня</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+
+    <button class="spread-btn" onclick="selectSpread('question_spread', this)">
+      <span class="spread-icon">❓</span>
+      <div class="spread-info">
+        <div class="spread-name">Расклад на вопрос</div>
+        <div class="spread-desc">Задайте конкретный вопрос картам</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+
+    <button class="spread-btn" onclick="selectSpread('spread_3', this)">
+      <span class="spread-icon">🔮</span>
+      <div class="spread-info">
+        <div class="spread-name">3 карты</div>
+        <div class="spread-desc">Прошлое · Настоящее · Будущее</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+
+    <button class="spread-btn" onclick="selectSpread('spread_celtic', this)">
+      <span class="spread-icon">⚜️</span>
+      <div class="spread-info">
+        <div class="spread-name">Кельтский крест</div>
+        <div class="spread-desc">Глубокий анализ ситуации · 10 карт</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+
+    <button class="spread-btn" onclick="selectSpread('year_spread', this)">
+      <span class="spread-icon">🗓</span>
+      <div class="spread-info">
+        <div class="spread-name">Расклад на год</div>
+        <div class="spread-desc">12 карт — по одной на каждый месяц</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+  </div>
+
+  <!-- Forecasts -->
+  <div class="section">
+    <p class="section-label"><span>🌙</span>Прогнозы</p>
+
+    <button class="spread-btn" onclick="selectSpread('astro_forecast', this)">
+      <span class="spread-icon">🌙</span>
+      <div class="spread-info">
+        <div class="spread-name">Астропрогноз на сегодня</div>
+        <div class="spread-desc">Планеты, Луна, управитель дня</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+
+    <button class="spread-btn" onclick="selectSpread('weekly_forecast', this)">
+      <span class="spread-icon">📅</span>
+      <div class="spread-info">
+        <div class="spread-name">Прогноз на неделю</div>
+        <div class="spread-desc">Три карты на начало, середину и конец</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+
+    <button class="spread-btn" onclick="selectSpread('lunar_calendar', this)">
+      <span class="spread-icon">🌕</span>
+      <div class="spread-info">
+        <div class="spread-name">Лунный календарь</div>
+        <div class="spread-desc">Что начинать и что отпускать сегодня</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+  </div>
+
+  <!-- Compatibility -->
+  <div class="section">
+    <p class="section-label"><span>❤️</span>Совместимость</p>
+
+    <button class="spread-btn" onclick="selectSpread('spread_compatibility', this)">
+      <span class="spread-icon">❤️</span>
+      <div class="spread-info">
+        <div class="spread-name">Совместимость (Таро)</div>
+        <div class="spread-desc">5 карт на двоих</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+
+    <button class="spread-btn" onclick="selectSpread('astro_compat', this)">
+      <span class="spread-icon">🌟</span>
+      <div class="spread-info">
+        <div class="spread-name">Астро-совместимость</div>
+        <div class="spread-desc">Синастрия по знакам зодиака</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+  </div>
+
+  <!-- Personal -->
+  <div class="section">
+    <p class="section-label"><span>✨</span>Личное</p>
+
+    <button class="spread-btn" onclick="selectSpread('ascendant', this)">
+      <span class="spread-icon">🔭</span>
+      <div class="spread-info">
+        <div class="spread-name">Асцендент / Десцендент</div>
+        <div class="spread-desc">По дате, времени и месту рождения</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+
+    <button class="spread-btn" onclick="selectSpread('numerology', this)">
+      <span class="spread-icon">🔢</span>
+      <div class="spread-info">
+        <div class="spread-name">Нумерология</div>
+        <div class="spread-desc">Числа жизненного пути и судьбы</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+
+    <button class="spread-btn" onclick="selectSpread('natal_houses', this)">
+      <span class="spread-icon">🏠</span>
+      <div class="spread-info">
+        <div class="spread-name">Натальные дома</div>
+        <div class="spread-desc">12 домов и планеты на момент рождения</div>
+      </div>
+      <span class="spread-arrow">›</span>
+    </button>
+  </div>
+
+</div>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+
+  // Greeting
+  const user = tg.initDataUnsafe?.user;
+  if (user?.first_name) {
+    const el = document.getElementById('greeting');
+    el.innerHTML = `Привет, <span>${user.first_name}</span> 👋`;
+  }
+
+  // Stars
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.2 + 0.4;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --d:${(Math.random()*5+2).toFixed(1)}s;
+      --op:${(Math.random()*0.65+0.15).toFixed(2)};
+      animation-delay:${(Math.random()*6).toFixed(1)}s;
+    `;
+    starsEl.appendChild(s);
+  }
+
+  let selected = null;
+
+  function haptic(type = 'light') {
+    try { tg.HapticFeedback.impactOccurred(type); } catch (_) {}
+  }
+
+  function shuffleDeck() {
+    haptic('light');
+    const deck = document.getElementById('deck');
+    deck.classList.remove('shuffling');
+    void deck.offsetWidth;
+    deck.classList.add('shuffling');
+    setTimeout(() => deck.classList.remove('shuffling'), 1200);
+  }
+
+  function startReading() {
+    if (!selected) return;
+    haptic('medium');
+    tg.sendData(selected);
+  }
+
+  function selectSpread(action, btn) {
+    selected = action;
+    haptic('medium');
+    document.querySelectorAll('.spread-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    shuffleDeck();
+    tg.MainButton.setText('✨ Начать');
+    tg.MainButton.color = '#7b4fd4';
+    tg.MainButton.textColor = '#ffffff';
+    tg.MainButton.show();
+  }
+
+  // onEvent is the reliable cross-version way to handle MainButton tap
+  tg.onEvent('mainButtonClicked', startReading);
+</script>
+</body>
+</html>
